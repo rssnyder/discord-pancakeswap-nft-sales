@@ -1,0 +1,36 @@
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0,15,30,45 * * * *"
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - run: pip3 install -r requirements.txt
+
+      - run: python main.py
+        env:
+          SALES_WEBHOOK_URL: ${{ secrets.SALES_WEBHOOK_URL }}
+          SALES_WEBHOOK_URL: ${{ secrets.SALES_WEBHOOK_URL }}
+          COLLECTION: "0x4bd2a30435e6624ccdee4c60229250a84a2e4cd6"
+
+      - name: save
+        continue-on-error: true
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add *.json
+          git commit -m db_update
+          git push
+      
+      - name: metrics
+        run: echo "last_update{repo=\"$GITHUB_REPOSITORY\",client=\"svrebelo\"} $(date +%s)" | curl -u metrics:$METRICS_PASSWORD --data-binary @- https://pushmetrics.rileysnyder.org/metrics/job/github_actions/instance/github
+        env:
+          METRICS_PASSWORD: ${{ secrets.METRICS_PASSWORD }}
