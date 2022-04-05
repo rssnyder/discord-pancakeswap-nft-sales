@@ -102,6 +102,20 @@ def get_listings(collection: str) -> dict:
     return response.json().get("data", {}).get("nfts", [])
 
 
+def get_nft(collection: str, token: str) -> dict:
+    """
+    Get nft data from pancakeswap
+    """
+
+    response = get(
+        f"https://nft.pancakeswap.com/api/v1/collections/{collection}/tokens/{token}"
+    )
+
+    response.raise_for_status()
+
+    return response.json()["data"]
+
+
 def bnb_price() -> float:
     """
     Get the current price of BNB
@@ -127,21 +141,18 @@ if __name__ == "__main__":
                 print("already sent sale")
                 continue
 
-            asset = get(
-                f"https://nft.pancakeswap.com/api/v1/collections/{getenv('COLLECTION')}/tokens/{sale['nft']['tokenId']}"
-            )
-
-            asset.raise_for_status()
-
-            nft = asset.json()["data"]
+            nft = get_nft(getenv('COLLECTION'), sale['nft']['tokenId'])
 
             for webhook_url in getenv("SALES_WEBHOOK_URL").split(';'):
                 webhook = DiscordWebhook(url=webhook_url)
 
+                rarity = [x['value'] for x in nft['attributes'] if x['traitType'] == 'Rarity Coefficient'].pop()
+                usd = float(sale['netPrice']) * bnb_price()
+                kind = nft['name'].split(' ')[0]
                 embed = DiscordEmbed(
                     title=nft["name"],
                     url=f"https://pancakeswap.finance/nfts/collections/{getenv('COLLECTION')}/{sale['nft']['tokenId']}",
-                    description=f"{nft['description']}\n\n**A {nft['name'].split(' ')[0]} just got sold!**\n\n**Seller**: {sale['seller']['id']}\n**Buyer**: {sale['buyer']['id']}\n**Price**: {sale['netPrice']}BNB/${float(sale['netPrice']) * bnb_price()}",
+                    description=f"{nft['description']}\n\n**A {kind} just got sold!**\n\n**Seller**: {sale['seller']['id']}\n**Buyer**: {sale['buyer']['id']}\n**Rarity**: {rarity}\n**Price (BNB)**: {sale['netPrice']}BNB\n**Price (USD)**: ${usd}",
                     color="03b2f8",
                 )
 
@@ -175,21 +186,18 @@ if __name__ == "__main__":
                 print("already sent listing")
                 continue
 
-            asset = get(
-                f"https://nft.pancakeswap.com/api/v1/collections/{getenv('COLLECTION')}/tokens/{listing['tokenId']}"
-            )
-
-            asset.raise_for_status()
-
-            nft = asset.json()["data"]
+            nft = get_nft(getenv('COLLECTION'), listing['tokenId'])
 
             for webhook_url in getenv("LISTINGS_WEBHOOK_URL").split(';'):
                 webhook = DiscordWebhook(url=webhook_url)
 
+                rarity = [x['value'] for x in nft['attributes'] if x['traitType'] == 'Rarity Coefficient'].pop()
+                usd = float(listing['currentAskPrice']) * bnb_price()
+                kind = nft['name'].split(' ')[0]
                 embed = DiscordEmbed(
                     title=nft["name"],
                     url=f"https://pancakeswap.finance/nfts/collections/{getenv('COLLECTION')}/{listing['tokenId']}",
-                    description=f"{nft['description']}\n\n**A {nft['name'].split(' ')[0]} just got listed!**\n\n**Seller**: {listing['currentSeller']}\n**Price**: {listing['currentAskPrice']}BNB/${float(listing['currentAskPrice']) * bnb_price()}",
+                    description=f"{nft['description']}\n\n**A {kind} just got listed!**\n\n**Seller**: {listing['currentSeller']}\n**Rarity**: {rarity}\n**Price (BNB)**: {listing['currentAskPrice']}BNB\n**Price (USD)**: ${usd}",
                     color="03b2f8",
                 )
 
