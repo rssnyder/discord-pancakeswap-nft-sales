@@ -18,7 +18,7 @@ jobs:
       - run: python main.py
         env:
           SALES_WEBHOOK_URL: ${{ secrets.SALES_WEBHOOK_URL }}
-          SALES_WEBHOOK_URL: ${{ secrets.SALES_WEBHOOK_URL }}
+          LISTINGS_WEBHOOK_URL: ${{ secrets.LISTINGS_WEBHOOK_URL }}
           COLLECTION: "0x4bd2a30435e6624ccdee4c60229250a84a2e4cd6"
 
       - name: save
