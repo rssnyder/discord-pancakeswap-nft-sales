@@ -5,6 +5,8 @@ from requests import post, get
 from discord_webhook import DiscordWebhook, DiscordEmbed
 from tinydb import TinyDB, Query
 
+PANCAKESWAP_URL = "https://api.thegraph.com/subgraphs/name/pancakeswap/nft-market"
+
 
 def get_sales(collection: str) -> dict:
     """
@@ -12,7 +14,7 @@ def get_sales(collection: str) -> dict:
     """
 
     response = post(
-        "https://api.thegraph.com/subgraphs/name/pancakeswap/nft-market",
+        PANCAKESWAP_URL,
         json={
             "query": f"""query getCollectionActivity {{
                 transactions(first: 50, orderBy: timestamp, orderDirection: desc, where:{{ collection: "{collection}" }}) {{                     
@@ -60,7 +62,7 @@ def get_listings(collection: str) -> dict:
     """
 
     response = post(
-        "https://api.thegraph.com/subgraphs/name/pancakeswap/nft-market",
+        PANCAKESWAP_URL,
         json={
             "query": f"""query getCollectionActivity {{
                 nfts(first: 50, orderDirection: desc, orderBy: updatedAt, where: {{ collection: "{collection}", isTradable: true }}) {{
@@ -121,10 +123,10 @@ def bnb_price() -> float:
     Get the current price of BNB
     """
     
-    bnb = get("https://api.coingecko.com/api/v3/coins/binancecoin")
+    response = get("https://api.coingecko.com/api/v3/coins/binancecoin")
     try:
-        bnb.raise_for_status()
-        return bnb.json()["market_data"]["current_price"]["usd"]
+        response.raise_for_status()
+        return response.json()["market_data"]["current_price"]["usd"]
     except:
         return 0.0
 
